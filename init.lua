@@ -140,6 +140,8 @@ function craftguide:get_recipe(iY, xoffset, tooltip, item, recipe_num, recipes)
 	return formspec ..
 		"image[" .. (xoffset - 1) .. "," .. (iY + 2) ..
 			".12;0.9,0.7;craftguide_arrow.png]" ..
+		"item_image_button[" .. (xoffset - 1) .. "," .. (iY + 3) .. ";1,1;" ..
+			output .. ";givemeitem;]" ..
 		"item_image_button[" .. (xoffset - 2) .. "," .. (iY + 2) .. ";1,1;" ..
 			output .. ";" .. item .. ";]" .. tooltip
 end
@@ -325,6 +327,21 @@ mt.register_on_player_receive_fields(function(player, formname, fields)
 		data.filter, data.item, data.pagenum, data.recipe_num = "", nil, 1, 1
 		data.items = progressive_mode and data.init_filter_items or datas.init_items
 		craftguide:get_formspec(player_name)
+
+	elseif fields.givemeitem then
+		local has_priv = minetest.check_player_privs(player,{server=true})
+		if has_priv then
+			local inventary = player:get_inventory()
+			local obj = ItemStack(data.item)
+			obj:set_count(99)
+			if inventary:add_item("main",obj) then
+				minetest.chat_send_player(player_name,"An " .. obj:get_name() .. "has been added to your inventory")
+				print(player_name .. " has picked up a " .. obj:get_name())
+			else -- The truth is that it does not work, it never gives false 
+				minetest.chat_send_player(player_name,"Could not add an " .. obj:get_name() .. " to your inventory")
+			end
+			craftguide:get_formspec(player_name)
+		end
 
 	elseif fields.alternate then
 		local recipe = data.recipes_item[data.recipe_num + 1]
